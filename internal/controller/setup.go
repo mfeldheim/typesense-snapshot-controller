@@ -18,9 +18,8 @@ import (
 const karpenterDisruptionTaint = "karpenter.sh/disruption"
 
 // Setup registers the pod and node reconcilers with the Manager.
-func Setup(mgr ctrl.Manager, cfg config.Config, r SnapshotRunner) error {
-	podLog := zap.NewNop()
-	podRec := NewPodReconciler(r, podLog)
+func Setup(mgr ctrl.Manager, cfg config.Config, r SnapshotRunner, log *zap.Logger) error {
+	podRec := NewPodReconciler(r, log.With(zap.String("reconciler", "pod")))
 	labelMap := parseLabelSelector(cfg.PodLabelSelector)
 
 	if err := ctrl.NewControllerManagedBy(mgr).
@@ -34,8 +33,7 @@ func Setup(mgr ctrl.Manager, cfg config.Config, r SnapshotRunner) error {
 		return fmt.Errorf("setup pod reconciler: %w", err)
 	}
 
-	nodeLog := zap.NewNop()
-	nodeRec := NewNodeReconciler(r, nodeLog)
+	nodeRec := NewNodeReconciler(r, log.With(zap.String("reconciler", "node")))
 
 	if err := ctrl.NewControllerManagedBy(mgr).
 		Named("node-disruption-watcher").
