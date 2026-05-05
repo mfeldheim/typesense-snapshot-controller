@@ -16,7 +16,6 @@ type Client struct {
 	httpClient *http.Client
 }
 
-// NewClient builds a client from host + port (production use).
 func NewClient(host string, port int, apiKey string, timeout time.Duration) *Client {
 	return &Client{
 		baseURL:    fmt.Sprintf("http://%s:%d", host, port),
@@ -25,7 +24,6 @@ func NewClient(host string, port int, apiKey string, timeout time.Duration) *Cli
 	}
 }
 
-// NewClientFromURL builds a client from a raw base URL (test use).
 func NewClientFromURL(baseURL, apiKey string, timeout time.Duration) *Client {
 	return &Client{
 		baseURL:    baseURL,
@@ -34,11 +32,10 @@ func NewClientFromURL(baseURL, apiKey string, timeout time.Duration) *Client {
 	}
 }
 
-// IsReady returns true when the pod's /readyz responds 200 (leader probe).
 func (c *Client) IsReady(ctx context.Context) (bool, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/readyz", nil)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("create readyz request: %w", err)
 	}
 	req.Header.Set("X-TYPESENSE-API-KEY", c.apiKey)
 	resp, err := c.httpClient.Do(req)
@@ -53,13 +50,12 @@ type snapshotResponse struct {
 	Success bool `json:"success"`
 }
 
-// TakeSnapshot calls POST /operations/snapshot on this node.
 func (c *Client) TakeSnapshot(ctx context.Context, snapshotPath string) error {
 	endpoint := fmt.Sprintf("%s/operations/snapshot?snapshot_path=%s",
 		c.baseURL, url.QueryEscape(snapshotPath))
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("create snapshot request: %w", err)
 	}
 	req.Header.Set("X-TYPESENSE-API-KEY", c.apiKey)
 
