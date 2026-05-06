@@ -1,0 +1,58 @@
+{{- if .Values.cronjob.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "typesense-snapshot-controller.fullname" . }}-snapshot
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "typesense-snapshot-controller.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.cronjob.schedule | quote }}
+  concurrencyPolicy: {{ .Values.cronjob.concurrencyPolicy }}
+  failedJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.cronjob.backoffLimit }}
+      template:
+        metadata:
+          labels:
+            {{- include "typesense-snapshot-controller.selectorLabels" . | nindent 12 }}
+        spec:
+          serviceAccountName: {{ include "typesense-snapshot-controller.serviceAccountName" . }}
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+          containers:
+            - name: snapshot
+              image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: ["/typesense-snapshot-controller", "run"]
+              env:
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: POD_LABEL_SELECTOR
+                  value: {{ .Values.typesense.podLabelSelector | quote }}
+                - name: SECRET_NAME
+                  value: {{ .Values.typesense.secretName | quote }}
+                - name: SECRET_KEY
+                  value: {{ .Values.typesense.secretKey | quote }}
+                - name: TYPESENSE_PORT
+                  value: {{ .Values.typesense.port | quote }}
+                - name: COOLDOWN_DURATION
+                  value: {{ .Values.cooldown.duration | quote }}
+                - name: COOLDOWN_CONFIGMAP
+                  value: {{ .Values.cooldown.configMapName | quote }}
+                - name: SNAPSHOT_PATH
+                  value: {{ .Values.typesense.snapshotPath | quote }}
+              resources:
+                {{- toYaml .Values.cronjob.resources | nindent 16 }}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+{{- end }}

@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "typesense-snapshot-controller.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "typesense-snapshot-controller.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.controller.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "typesense-snapshot-controller.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "typesense-snapshot-controller.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "typesense-snapshot-controller.serviceAccountName" . }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+      containers:
+        - name: controller
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/typesense-snapshot-controller", "serve"]
+          env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_LABEL_SELECTOR
+              value: {{ .Values.typesense.podLabelSelector | quote }}
+            - name: SECRET_NAME
+              value: {{ .Values.typesense.secretName | quote }}
+            - name: SECRET_KEY
+              value: {{ .Values.typesense.secretKey | quote }}
+            - name: TYPESENSE_PORT
+              value: {{ .Values.typesense.port | quote }}
+            - name: COOLDOWN_DURATION
+              value: {{ .Values.cooldown.duration | quote }}
+            - name: COOLDOWN_CONFIGMAP
+              value: {{ .Values.cooldown.configMapName | quote }}
+            - name: SNAPSHOT_PATH
+              value: {{ .Values.typesense.snapshotPath | quote }}
+            - name: METRICS_ADDR
+              value: {{ .Values.controller.metricsAddr | quote }}
+            - name: HEALTH_PROBE_ADDR
+              value: {{ .Values.controller.healthProbeAddr | quote }}
+            - name: LEADER_ELECTION
+              value: {{ .Values.controller.leaderElection | quote }}
+            - name: LEADER_ELECTION_ID
+              value: {{ .Values.controller.leaderElectionID | quote }}
+          ports:
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+            - name: health
+              containerPort: 8081
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.controller.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
