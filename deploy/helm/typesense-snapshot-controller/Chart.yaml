@@ -1,0 +1,12 @@
+apiVersion: v2
+name: typesense-snapshot-controller
+description: Automated Typesense snapshot controller with CronJob and event-driven triggers
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+  - typesense
+  - snapshot
+  - kubernetes
+maintainers:
+  - name: opentelekomcloud

@@ -1,0 +1,51 @@
+image:
+  repository: ghcr.io/opentelekomcloud/typesense-snapshot-controller
+  tag: latest
+  pullPolicy: IfNotPresent
+
+typesense:
+  namespace: typesense
+  podLabelSelector: "app=typesense-global-2-sts"
+  port: 8108
+  secretName: typesense-cluster-bootstrap-key
+  secretKey: typesense-api-key
+  snapshotPath: /var/lib/typesense/snapshots
+
+cooldown:
+  duration: "3m"
+  configMapName: typesense-snapshot-cooldown
+
+controller:
+  replicaCount: 2
+  leaderElection: true
+  metricsAddr: ":9090"
+  healthProbeAddr: ":8081"
+  leaderElectionID: typesense-snapshot-controller
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+cronjob:
+  enabled: true
+  schedule: "*/30 * * * *"
+  concurrencyPolicy: Forbid
+  backoffLimit: 2
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+networkPolicy:
+  enabled: true
