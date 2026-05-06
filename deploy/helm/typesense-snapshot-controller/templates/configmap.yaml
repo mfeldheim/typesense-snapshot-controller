@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: {{ .Values.cooldown.configMapName }}
   namespace: {{ .Release.Namespace }}
+  annotations:
+    helm.sh/resource-policy: keep
   labels:
     {{- include "typesense-snapshot-controller.labels" . | nindent 4 }}
 data: {}
