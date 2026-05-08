@@ -1,5 +1,5 @@
 image:
-  repository: ghcr.io/opentelekomcloud/typesense-snapshot-controller
+  repository: ghcr.io/mfeldheim/typesense-snapshot-controller
   tag: latest
   pullPolicy: IfNotPresent
 

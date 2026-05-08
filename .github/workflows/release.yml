@@ -6,7 +6,7 @@ on:
     tags: ["v*.*.*"]
 
 env:
-  IMAGE: ghcr.io/opentelekomcloud/typesense-snapshot-controller
+  IMAGE: ghcr.io/mfeldheim/typesense-snapshot-controller
 
 jobs:
   build-push:
