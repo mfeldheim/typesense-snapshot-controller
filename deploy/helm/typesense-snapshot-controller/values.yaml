@@ -49,3 +49,5 @@ serviceAccount:
 
 networkPolicy:
   enabled: true
+  typesensePodLabels:
+    app: typesense-global-2-sts

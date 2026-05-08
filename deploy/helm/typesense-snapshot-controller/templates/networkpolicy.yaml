@@ -20,7 +20,7 @@ spec:
               kubernetes.io/metadata.name: {{ .Release.Namespace }}
           podSelector:
             matchLabels:
-              app: typesense
+              {{- toYaml .Values.networkPolicy.typesensePodLabels | nindent 14 }}
       ports:
         - port: {{ .Values.typesense.port }}
           protocol: TCP
